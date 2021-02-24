@@ -1,6 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const sprintf = require('sprintf-js').sprintf;
+const Promise = require('bluebird');
 
 var counter = 0;
 
@@ -38,9 +39,17 @@ const writeCounter = (count, callback) => {
 
 // Public API - Fix this function //////////////////////////////////////////////
 
-exports.getNextUniqueId = () => {
-  counter = counter + 1;
-  return zeroPaddedNumber(counter);
+exports.getNextUniqueId = (callback) => {
+  var writeCounterAsync = Promise.promisify(writeCounter);
+  var readAsync = new Promise(function(resolve, reject) {
+    readCounter((err, id) => {
+      resolve(id + 1);
+    });
+  });
+  readAsync
+    .then(writeCounterAsync)
+    .then(count => callback(null, count))
+    .catch(err => callback(err));
 };
 
 
